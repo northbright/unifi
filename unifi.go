@@ -195,5 +195,9 @@ func (u *Unifi) Logout() error {
 		return err
 	}
 
+	respCookies := resp.Cookies()
+	// Set cookie for cookiejar manually.
+	u.jar.SetCookies(u.baseURL, respCookies)
+
 	return err
 }
