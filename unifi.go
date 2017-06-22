@@ -191,7 +191,7 @@ func (u *Unifi) Logout() error {
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		err = fmt.Errorf("Logout Unifi failed. Response: %v", b)
+		err = fmt.Errorf("Logout Unifi failed. Response: %v", string(b))
 		return err
 	}
 
