@@ -92,12 +92,7 @@ func ParseJSON(b []byte) (map[string]interface{}, bool, error) {
 		return m, false, err
 	}
 
-	if rc != "ok" {
-		err = fmt.Errorf("rc is not ok: %v", rc)
-		return m, false, err
-	}
-
-	return m, true, err
+	return m, rc == "ok", err
 }
 
 // Login() logins Unifi Controller.
