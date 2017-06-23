@@ -2,6 +2,7 @@ package unifi
 
 import (
 	"bytes"
+	"context"
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
@@ -96,7 +97,7 @@ func ParseJSON(b []byte) (map[string]interface{}, bool, error) {
 }
 
 // Login() logins Unifi Controller.
-func (u *Unifi) Login() error {
+func (u *Unifi) Login(ctx context.Context) error {
 	var err error
 
 	// POST data is in JSON format.
@@ -122,6 +123,8 @@ func (u *Unifi) Login() error {
 		err = fmt.Errorf("NewRequest error: %v", err)
 		return err
 	}
+	// Get a copy of req with its context changed to ctx.
+	req = req.WithContext(ctx)
 
 	req.Header.Set("Accept", "*/*")
 	req.Header.Set("Content-Type", "application/json")
@@ -158,7 +161,7 @@ func (u *Unifi) Login() error {
 }
 
 // Logout logouts Unifi Controller.
-func (u *Unifi) Logout() error {
+func (u *Unifi) Logout(ctx context.Context) error {
 	var err error
 
 	// Logout.
@@ -168,6 +171,8 @@ func (u *Unifi) Logout() error {
 		err = fmt.Errorf("NewRequest error: %v", err)
 		return err
 	}
+	// Get a copy of req with its context changed to ctx.
+	req = req.WithContext(ctx)
 
 	req.Header.Set("Accept", "*/*")
 

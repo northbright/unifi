@@ -1,7 +1,9 @@
 package unifi_test
 
 import (
+	"context"
 	"log"
+	"time"
 
 	"github.com/northbright/unifi"
 )
@@ -15,7 +17,7 @@ func Example() {
 
 	defer func() {
 		if err != nil {
-			log.Printf("%v", err)
+			log.Printf("error: %v", err)
 		}
 	}()
 
@@ -24,9 +26,35 @@ func Example() {
 		return
 	}
 
-	if err = u.Login(); err != nil {
+	// Set timeout to 5 seconds.
+	timeout := time.Duration(time.Second * 5)
+	// Create context with timeout.
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+
+	exit := make(chan error)
+	go func() {
+		if err = u.Login(ctx); err != nil {
+			exit <- err
+			return
+		}
+
+		if err = u.Logout(ctx); err != nil {
+			exit <- err
+			return
+		}
+
+		exit <- nil
+	}()
+
+	select {
+	case err = <-exit:
+		log.Printf("goroutine exited")
+		return
+
+	case <-ctx.Done():
+		err = ctx.Err()
 		return
 	}
-	defer u.Logout()
 	// Output:
 }
