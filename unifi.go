@@ -150,6 +150,10 @@ func ParseJSON(b []byte) (map[string]interface{}, bool, error) {
 }
 
 // Login() logins Unifi Controller.
+//
+// Params:
+//     ctx: parent context. You may use context.Background() to create an empty context.
+//          See http://godoc.org/context for more info.
 func (u *Unifi) Login(ctx context.Context) error {
 	var err error
 
@@ -219,6 +223,10 @@ func (u *Unifi) Login(ctx context.Context) error {
 }
 
 // Logout logouts Unifi Controller.
+//
+// Params:
+//     ctx: parent context. You may use context.Background() to create an empty context.
+//          See http://godoc.org/context for more info.
 func (u *Unifi) Logout(ctx context.Context) error {
 	var err error
 
@@ -270,6 +278,16 @@ func (u *Unifi) Logout(ctx context.Context) error {
 	return err
 }
 
+// AuthorizeGuestWithQos() authorizes guest by MAC, time and set qos.
+//
+// Params:
+//     ctx: parent context. You may use context.Background() to create an empty context.
+//          See http://godoc.org/context for more info.
+//     mac: MAC address of guest to be authorized. It's in "aa:bb:cc:dd:ee:ff" format.
+//     min: Timeout in minutes.
+//     down: Max download speed in KB.
+//     up: Max upload speed in KB.
+//     quota: Quota in MB.
 func (u *Unifi) AuthorizeGuestWithQos(ctx context.Context, mac string, min, down, up, quota int) error {
 	var err error
 
@@ -350,6 +368,13 @@ func (u *Unifi) AuthorizeGuestWithQos(ctx context.Context, mac string, min, down
 	return err
 }
 
+// AuthorizeGuest() authorizes guest by MAC, time.It's a wrapper of AuthorizeGuestWithQos.
+//
+// Params:
+//     ctx: parent context. You may use context.Background() to create an empty context.
+//          See http://godoc.org/context for more info.
+//     mac: MAC address of guest to be authorized. It's in "aa:bb:cc:dd:ee:ff" format.
+//     min: Timeout in minutes.
 func (u *Unifi) AuthorizeGuest(ctx context.Context, mac string, min int) error {
 	return u.AuthorizeGuestWithQos(ctx, mac, min, 0, 0, 0)
 }
