@@ -7,13 +7,15 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"net/http/cookiejar"
 	"net/url"
 )
 
 var (
-	rawURLs = map[string]string{
+	DebugMode = true
+	rawURLs   = map[string]string{
 		"login":  "/api/login",
 		"logout": "/api/logout",
 	}
@@ -142,14 +144,17 @@ func (u *Unifi) Login(ctx context.Context) error {
 	}
 	defer resp.Body.Close()
 
-	b, err = ioutil.ReadAll(resp.Body)
-	if err != nil {
-		err = fmt.Errorf("ReadAll() error: %v", err)
-		return err
+	if DebugMode {
+		b, err = ioutil.ReadAll(resp.Body)
+		if err != nil {
+			err = fmt.Errorf("ReadAll() error: %v", err)
+			return err
+		}
+		log.Printf("Login() response: %v", string(b))
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		err = fmt.Errorf("Login Unifi failed. Response: %v", string(b))
+		err = fmt.Errorf("Login Unifi failed")
 		return err
 	}
 
@@ -189,14 +194,17 @@ func (u *Unifi) Logout(ctx context.Context) error {
 	}
 	defer resp.Body.Close()
 
-	b, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		err = fmt.Errorf("ReadAll() error: %v", err)
-		return err
+	if DebugMode {
+		b, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			err = fmt.Errorf("ReadAll() error: %v", err)
+			return err
+		}
+		log.Printf("Logout() response: %v", string(b))
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		err = fmt.Errorf("Logout Unifi failed. Response: %v", string(b))
+		err = fmt.Errorf("Logout Unifi failed")
 		return err
 	}
 
