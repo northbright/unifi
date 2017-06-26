@@ -26,6 +26,8 @@ func Example() {
 		return
 	}
 
+	u.SetDebugMode(true)
+
 	// Set timeout to 5 seconds.
 	timeout := time.Duration(time.Second * 5)
 	// Create context with timeout.

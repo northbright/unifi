@@ -14,8 +14,7 @@ import (
 )
 
 var (
-	DebugMode = true
-	rawURLs   = map[string]string{
+	rawURLs = map[string]string{
 		"login":  "/api/login",
 		"logout": "/api/logout",
 	}
@@ -23,11 +22,12 @@ var (
 
 // Unifi provides functions to call Unifi APIs.
 type Unifi struct {
-	userName string
-	password string
-	baseURL  *url.URL
-	urls     map[string]*url.URL
-	jar      *cookiejar.Jar
+	userName  string
+	password  string
+	baseURL   *url.URL
+	urls      map[string]*url.URL
+	jar       *cookiejar.Jar
+	debugMode bool
 }
 
 // New creates a new Unifi.
@@ -58,6 +58,8 @@ func New(unifiURL, userName, password string) (*Unifi, error) {
 		err = fmt.Errorf("cookiejar.New() error: %v", err)
 		return u, err
 	}
+
+	u.debugMode = false
 
 	return u, err
 }
@@ -96,6 +98,16 @@ func ParseJSON(b []byte) (map[string]interface{}, bool, error) {
 	}
 
 	return m, rc == "ok", err
+}
+
+// SetDebugMode sets debug mode for Unifi.
+func (u *Unifi) SetDebugMode(f bool) {
+	u.debugMode = f
+}
+
+// IsDebugMode returns if it's in debug mode or not.
+func (u *Unifi) IsDebugMode() bool {
+	return u.debugMode
 }
 
 // Login() logins Unifi Controller.
@@ -144,7 +156,7 @@ func (u *Unifi) Login(ctx context.Context) error {
 	}
 	defer resp.Body.Close()
 
-	if DebugMode {
+	if u.debugMode {
 		b, err = ioutil.ReadAll(resp.Body)
 		if err != nil {
 			err = fmt.Errorf("ReadAll() error: %v", err)
@@ -194,7 +206,7 @@ func (u *Unifi) Logout(ctx context.Context) error {
 	}
 	defer resp.Body.Close()
 
-	if DebugMode {
+	if u.debugMode {
 		b, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
 			err = fmt.Errorf("ReadAll() error: %v", err)
