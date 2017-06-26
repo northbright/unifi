@@ -270,19 +270,26 @@ func (u *Unifi) Logout(ctx context.Context) error {
 	return err
 }
 
-func (u *Unifi) AuthorizeGuest(ctx context.Context, mac string, min int) error {
+func (u *Unifi) AuthorizeGuestWithQos(ctx context.Context, mac string, min, down, up, quota int) error {
 	var err error
 
 	defer logFnResult("AuthorizeGuest", err)
 
-	args := struct {
-		Cmd     string `json:"cmd"`
-		Mac     string `json:"mac"`
-		Minutes string `json:"minutes"`
-	}{
-		"authorize-guest",
-		mac,
-		strconv.Itoa(min),
+	args := map[string]string{}
+	args["cmd"] = "authorize-guest"
+	args["mac"] = mac
+	args["minutes"] = strconv.Itoa(min)
+
+	if down > 0 {
+		args["down"] = strconv.Itoa(down)
+	}
+
+	if up > 0 {
+		args["up"] = strconv.Itoa(up)
+	}
+
+	if quota > 0 {
+		args["bytes"] = strconv.Itoa(quota)
 	}
 
 	b, err := json.Marshal(args)
@@ -341,4 +348,8 @@ func (u *Unifi) AuthorizeGuest(ctx context.Context, mac string, min int) error {
 	u.jar.SetCookies(u.baseURL, respCookies)
 
 	return err
+}
+
+func (u *Unifi) AuthorizeGuest(ctx context.Context, mac string, min int) error {
+	return u.AuthorizeGuestWithQos(ctx, mac, min, 0, 0, 0)
 }

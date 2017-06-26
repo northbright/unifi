@@ -36,17 +36,32 @@ func Example() {
 
 	exit := make(chan error)
 	go func() {
+		// Login
 		if err = u.Login(ctx); err != nil {
 			exit <- err
 			return
 		}
 
+		// Logout before return if login successfully.
 		defer func() {
 			exit <- u.Logout(ctx)
 		}()
 
-		mac := "aa:bb:cc:dd:ee:ff"
-		if err = u.AuthorizeGuest(ctx, mac, 5); err != nil {
+		mac := "aa:bb:cc:dd:ee:ff" // MAC address.
+		min := 5                   // time to authorize in minutes.
+
+		// Authorize guest with MAC and time.
+		if err = u.AuthorizeGuest(ctx, mac, min); err != nil {
+			exit <- err
+			return
+		}
+
+		down := 2048 // download speed in KB.
+		up := 512    // upload speed in KB.
+		quota := 20  // Quota limit in MB.
+
+		// Authorize guest with MAC, time, download speed, upload speed and quota.
+		if err = u.AuthorizeGuestWithQos(ctx, mac, min, down, up, quota); err != nil {
 			exit <- err
 			return
 		}
