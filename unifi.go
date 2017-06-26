@@ -11,35 +11,80 @@ import (
 	"net/http"
 	"net/http/cookiejar"
 	"net/url"
+	"strconv"
+	"strings"
+)
+
+const (
+	defaultSite = "default"
 )
 
 var (
-	rawURLs = map[string]string{
+	debugMode = false
+	rawURLs   = map[string]string{
 		"login":  "/api/login",
 		"logout": "/api/logout",
+		"stamgr": "/api/s/$site/cmd/stamgr",
 	}
 )
 
 // Unifi provides functions to call Unifi APIs.
 type Unifi struct {
-	userName  string
-	password  string
-	baseURL   *url.URL
-	urls      map[string]*url.URL
-	jar       *cookiejar.Jar
-	debugMode bool
+	site     string
+	userName string
+	password string
+	baseURL  *url.URL
+	urls     map[string]*url.URL
+	jar      *cookiejar.Jar
+}
+
+// SetDebugMode sets debug mode for package unifi.
+func SetDebugMode(f bool) {
+	debugMode = f
+}
+
+// IsDebugMode returns if it's in debug mode or not.
+func IsDebugMode() bool {
+	return debugMode
+}
+
+// logFnResult outputs the result of the function.
+//
+// params:
+//     funcName: function name.
+//     err: result of function.
+func logFnResult(funcName string, err error) {
+	if !debugMode {
+		return
+	}
+
+	if err != nil {
+		log.Printf("%v() error: %v", funcName, err)
+		return
+	}
+
+	log.Printf("%v() ok", funcName)
 }
 
 // New creates a new Unifi.
 //
 // Params:
+//     site: Site name of Unifi Controller. Default site name is "default".
 //     unifiURL: Unifi Controller's URL. E.g. https://10.0.1.100:8443
 //     userName: User name of Unifi Controller.
 //     password: Password of Unifi Controller.
-func New(unifiURL, userName, password string) (*Unifi, error) {
+func New(site, unifiURL, userName, password string) (*Unifi, error) {
 	var err error
 
+	defer logFnResult("New", err)
+
 	u := &Unifi{}
+
+	if site == "" {
+		site = defaultSite
+	}
+	u.site = site
+
 	if u.baseURL, err = url.Parse(unifiURL); err != nil {
 		err = fmt.Errorf("Parse Unifi URL error: %v", err)
 		return u, err
@@ -47,6 +92,8 @@ func New(unifiURL, userName, password string) (*Unifi, error) {
 
 	u.urls = map[string]*url.URL{}
 	for k, v := range rawURLs {
+		// Replace $site with real site if need.
+		v = strings.Replace(v, "$site", u.site, -1)
 		refURL, _ := url.Parse(v)
 		u.urls[k] = u.baseURL.ResolveReference(refURL)
 	}
@@ -59,7 +106,7 @@ func New(unifiURL, userName, password string) (*Unifi, error) {
 		return u, err
 	}
 
-	u.debugMode = false
+	debugMode = false
 
 	return u, err
 }
@@ -74,6 +121,8 @@ func New(unifiURL, userName, password string) (*Unifi, error) {
 func ParseJSON(b []byte) (map[string]interface{}, bool, error) {
 	var err error
 	m := map[string]interface{}{}
+
+	defer logFnResult("ParseJSON", err)
 
 	if err = json.Unmarshal(b, &m); err != nil {
 		err = fmt.Errorf("json.Unmarshal() error: %v", err)
@@ -100,22 +149,14 @@ func ParseJSON(b []byte) (map[string]interface{}, bool, error) {
 	return m, rc == "ok", err
 }
 
-// SetDebugMode sets debug mode for Unifi.
-func (u *Unifi) SetDebugMode(f bool) {
-	u.debugMode = f
-}
-
-// IsDebugMode returns if it's in debug mode or not.
-func (u *Unifi) IsDebugMode() bool {
-	return u.debugMode
-}
-
 // Login() logins Unifi Controller.
 func (u *Unifi) Login(ctx context.Context) error {
 	var err error
 
+	defer logFnResult("Login", err)
+
 	// POST data is in JSON format.
-	login := struct {
+	args := struct {
 		Username string `json:"username"`
 		Password string `json:"password"`
 	}{
@@ -123,7 +164,7 @@ func (u *Unifi) Login(ctx context.Context) error {
 		u.password,
 	}
 
-	b, err := json.Marshal(login)
+	b, err := json.Marshal(args)
 	if err != nil {
 		err = fmt.Errorf("json.Marshal() error: %v", err)
 		return err
@@ -156,7 +197,7 @@ func (u *Unifi) Login(ctx context.Context) error {
 	}
 	defer resp.Body.Close()
 
-	if u.debugMode {
+	if debugMode {
 		b, err = ioutil.ReadAll(resp.Body)
 		if err != nil {
 			err = fmt.Errorf("ReadAll() error: %v", err)
@@ -166,7 +207,7 @@ func (u *Unifi) Login(ctx context.Context) error {
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		err = fmt.Errorf("Login Unifi failed")
+		err = fmt.Errorf("response status code: %v", resp.StatusCode)
 		return err
 	}
 
@@ -180,6 +221,8 @@ func (u *Unifi) Login(ctx context.Context) error {
 // Logout logouts Unifi Controller.
 func (u *Unifi) Logout(ctx context.Context) error {
 	var err error
+
+	defer logFnResult("Logout", err)
 
 	// Logout.
 	// Method: POST.
@@ -197,7 +240,7 @@ func (u *Unifi) Logout(ctx context.Context) error {
 		// Skip cert verify.
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 	}
-	client := &http.Client{Transport: tr}
+	client := &http.Client{Transport: tr, Jar: u.jar}
 
 	resp, err := client.Do(req)
 	if err != nil {
@@ -206,7 +249,7 @@ func (u *Unifi) Logout(ctx context.Context) error {
 	}
 	defer resp.Body.Close()
 
-	if u.debugMode {
+	if debugMode {
 		b, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
 			err = fmt.Errorf("ReadAll() error: %v", err)
@@ -216,7 +259,80 @@ func (u *Unifi) Logout(ctx context.Context) error {
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		err = fmt.Errorf("Logout Unifi failed")
+		err = fmt.Errorf("response status code: %v", resp.StatusCode)
+		return err
+	}
+
+	respCookies := resp.Cookies()
+	// Set cookie for cookiejar manually.
+	u.jar.SetCookies(u.baseURL, respCookies)
+
+	return err
+}
+
+func (u *Unifi) AuthorizeGuest(ctx context.Context, mac string, min int) error {
+	var err error
+
+	defer logFnResult("AuthorizeGuest", err)
+
+	args := struct {
+		Cmd     string `json:"cmd"`
+		Mac     string `json:"mac"`
+		Minutes string `json:"minutes"`
+	}{
+		"authorize-guest",
+		mac,
+		strconv.Itoa(min),
+	}
+
+	b, err := json.Marshal(args)
+	if err != nil {
+		err = fmt.Errorf("json.Marshal() error: %v", err)
+		return err
+	}
+
+	if debugMode {
+		log.Printf("AuthorizeGuest(): POST data: %v", string(b))
+	}
+
+	buf := bytes.NewBuffer(b)
+
+	// Authorize Guest.
+	req, err := http.NewRequest("POST", u.urls["stamgr"].String(), buf)
+	if err != nil {
+		err = fmt.Errorf("NewRequest error: %v", err)
+		return err
+	}
+	// Get a copy of req with its context changed to ctx.
+	req = req.WithContext(ctx)
+
+	req.Header.Set("Accept", "*/*")
+	req.Header.Set("Content-Type", "application/json")
+
+	tr := &http.Transport{
+		// Skip cert verify.
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	}
+	client := &http.Client{Transport: tr, Jar: u.jar}
+
+	resp, err := client.Do(req)
+	if err != nil {
+		err = fmt.Errorf("client.Do() error: %v", err)
+		return err
+	}
+	defer resp.Body.Close()
+
+	if debugMode {
+		b, err = ioutil.ReadAll(resp.Body)
+		if err != nil {
+			err = fmt.Errorf("ReadAll() error: %v", err)
+			return err
+		}
+		log.Printf("AuthorizeGuest() response: %v", string(b))
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		err = fmt.Errorf("response status code: %v", resp.StatusCode)
 		return err
 	}
 

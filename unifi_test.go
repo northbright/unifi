@@ -11,7 +11,7 @@ import (
 func Example() {
 	var err error
 
-	unifiURL := "https://192.168.1.10:8443"
+	unifiURL := "https://192.168.1.56:8443"
 	userName := "admin"
 	password := "admin"
 
@@ -21,12 +21,12 @@ func Example() {
 		}
 	}()
 
-	u, err := unifi.New(unifiURL, userName, password)
+	u, err := unifi.New("", unifiURL, userName, password)
 	if err != nil {
 		return
 	}
 
-	u.SetDebugMode(true)
+	unifi.SetDebugMode(true)
 
 	// Set timeout to 5 seconds.
 	timeout := time.Duration(time.Second * 5)
@@ -41,7 +41,12 @@ func Example() {
 			return
 		}
 
-		if err = u.Logout(ctx); err != nil {
+		defer func() {
+			exit <- u.Logout(ctx)
+		}()
+
+		mac := "aa:bb:cc:dd:ee:ff"
+		if err = u.AuthorizeGuest(ctx, mac, 5); err != nil {
 			exit <- err
 			return
 		}
