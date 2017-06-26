@@ -21,7 +21,7 @@ func Example() {
 		}
 	}()
 
-	u, err := unifi.New("", unifiURL, userName, password)
+	u, err := unifi.New("default", unifiURL, userName, password)
 	if err != nil {
 		return
 	}

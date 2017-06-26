@@ -291,7 +291,7 @@ func (u *Unifi) Logout(ctx context.Context) error {
 func (u *Unifi) AuthorizeGuestWithQos(ctx context.Context, mac string, min, down, up, quota int) error {
 	var err error
 
-	defer logFnResult("AuthorizeGuest", err)
+	defer logFnResult("AuthorizeGuestWithQos", err)
 
 	args := map[string]string{}
 	args["cmd"] = "authorize-guest"
@@ -316,11 +316,12 @@ func (u *Unifi) AuthorizeGuestWithQos(ctx context.Context, mac string, min, down
 		return err
 	}
 
-	if debugMode {
-		log.Printf("AuthorizeGuest(): POST data: %v", string(b))
-	}
-
 	buf := bytes.NewBuffer(b)
+
+	if debugMode {
+		log.Printf("AuthorizeGuestWithQos(): POST URL: %v", u.urls["stamgr"].String())
+		log.Printf("AuthorizeGuestWithQos(): POST data: %v", string(b))
+	}
 
 	// Authorize Guest.
 	req, err := http.NewRequest("POST", u.urls["stamgr"].String(), buf)
