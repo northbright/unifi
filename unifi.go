@@ -97,8 +97,6 @@ func New(unifiURL, userName, password string) (*Unifi, error) {
 		return u, err
 	}
 
-	debugMode = false
-
 	return u, err
 }
 
