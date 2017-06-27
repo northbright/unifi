@@ -21,7 +21,7 @@ func Example() {
 		}
 	}()
 
-	u, err := unifi.New("default", unifiURL, userName, password)
+	u, err := unifi.New(unifiURL, userName, password)
 	if err != nil {
 		return
 	}
@@ -51,7 +51,7 @@ func Example() {
 		min := 5                   // time to authorize in minutes.
 
 		// Authorize guest with MAC and time.
-		if err = u.AuthorizeGuest(ctx, mac, min); err != nil {
+		if err = u.AuthorizeGuest(ctx, "default", mac, min); err != nil {
 			exit <- err
 			return
 		}
@@ -61,7 +61,7 @@ func Example() {
 		quota := 20  // Quota limit in MB.
 
 		// Authorize guest with MAC, time, download speed, upload speed and quota.
-		if err = u.AuthorizeGuestWithQos(ctx, mac, min, down, up, quota); err != nil {
+		if err = u.AuthorizeGuestWithQos(ctx, "default", mac, min, down, up, quota); err != nil {
 			exit <- err
 			return
 		}

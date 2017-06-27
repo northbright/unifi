@@ -30,7 +30,6 @@ var (
 
 // Unifi provides functions to call Unifi APIs.
 type Unifi struct {
-	site     string
 	userName string
 	password string
 	baseURL  *url.URL
@@ -69,21 +68,15 @@ func logFnResult(funcName string, err error) {
 // New creates a new Unifi.
 //
 // Params:
-//     site: Site name of Unifi Controller. Default site name is "default".
 //     unifiURL: Unifi Controller's URL. E.g. https://10.0.1.100:8443
 //     userName: User name of Unifi Controller.
 //     password: Password of Unifi Controller.
-func New(site, unifiURL, userName, password string) (*Unifi, error) {
+func New(unifiURL, userName, password string) (*Unifi, error) {
 	var err error
 
 	defer logFnResult("New", err)
 
 	u := &Unifi{}
-
-	if site == "" {
-		site = defaultSite
-	}
-	u.site = site
 
 	if u.baseURL, err = url.Parse(unifiURL); err != nil {
 		err = fmt.Errorf("Parse Unifi URL error: %v", err)
@@ -92,8 +85,6 @@ func New(site, unifiURL, userName, password string) (*Unifi, error) {
 
 	u.urls = map[string]*url.URL{}
 	for k, v := range rawURLs {
-		// Replace $site with real site if need.
-		v = strings.Replace(v, "$site", u.site, -1)
 		refURL, _ := url.Parse(v)
 		u.urls[k] = u.baseURL.ResolveReference(refURL)
 	}
@@ -283,15 +274,23 @@ func (u *Unifi) Logout(ctx context.Context) error {
 // Params:
 //     ctx: parent context. You may use context.Background() to create an empty context.
 //          See http://godoc.org/context for more info.
+//     site: Site name. It's **NOT** the "Site Name"(just description) in Unifi GUI.
+//           If you only have 1 site. Just use "default" or leave it empty.
+//           If you've created new sites, follow this to get the site name:
+//           https://github.com/northbright/Notes/blob/master/Software/unifi/use-compass-to-explore-mongodb-of-unifi/use-compass-to-explore-mongodb-of-unifi.md
 //     mac: MAC address of guest to be authorized. It's in "aa:bb:cc:dd:ee:ff" format.
 //     min: Timeout in minutes.
 //     down: Max download speed in KB.
 //     up: Max upload speed in KB.
 //     quota: Quota in MB.
-func (u *Unifi) AuthorizeGuestWithQos(ctx context.Context, mac string, min, down, up, quota int) error {
+func (u *Unifi) AuthorizeGuestWithQos(ctx context.Context, site, mac string, min, down, up, quota int) error {
 	var err error
 
 	defer logFnResult("AuthorizeGuestWithQos", err)
+
+	if site == "" {
+		site = "default"
+	}
 
 	args := map[string]string{}
 	args["cmd"] = "authorize-guest"
@@ -323,8 +322,12 @@ func (u *Unifi) AuthorizeGuestWithQos(ctx context.Context, mac string, min, down
 		log.Printf("AuthorizeGuestWithQos(): POST data: %v", string(b))
 	}
 
+	urlStr := u.urls["stamgr"].String()
+	// Replace $site with real site.
+	urlStr = strings.Replace(urlStr, "$site", site, -1)
+
 	// Authorize Guest.
-	req, err := http.NewRequest("POST", u.urls["stamgr"].String(), buf)
+	req, err := http.NewRequest("POST", urlStr, buf)
 	if err != nil {
 		err = fmt.Errorf("NewRequest error: %v", err)
 		return err
@@ -374,8 +377,13 @@ func (u *Unifi) AuthorizeGuestWithQos(ctx context.Context, mac string, min, down
 // Params:
 //     ctx: parent context. You may use context.Background() to create an empty context.
 //          See http://godoc.org/context for more info.
+//     site: Site name. It's **NOT** the "Site Name"(just description) in Unifi GUI.
+//           If you only have 1 site. Just use "default" or leave it empty.
+//           If you've created new sites, follow this to get the site name:
+//           https://github.com/northbright/Notes/blob/master/Software/unifi/use-compass-to-explore-mongodb-of-unifi/use-compass-to-explore-mongodb-of-unifi.md
+//
 //     mac: MAC address of guest to be authorized. It's in "aa:bb:cc:dd:ee:ff" format.
 //     min: Timeout in minutes.
-func (u *Unifi) AuthorizeGuest(ctx context.Context, mac string, min int) error {
-	return u.AuthorizeGuestWithQos(ctx, mac, min, 0, 0, 0)
+func (u *Unifi) AuthorizeGuest(ctx context.Context, site, mac string, min int) error {
+	return u.AuthorizeGuestWithQos(ctx, site, mac, min, 0, 0, 0)
 }
