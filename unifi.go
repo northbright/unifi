@@ -143,7 +143,7 @@ func ParseJSON(b []byte) (map[string]interface{}, bool, error) {
 // Login() logins Unifi Controller.
 //
 // Params:
-//     ctx: parent context. You may use context.Background() to create an empty context.
+//     ctx: Parent context. You may use context.Background() to create an empty context.
 //          See http://godoc.org/context for more info.
 func (u *Unifi) Login(ctx context.Context) error {
 	var err error
@@ -216,7 +216,7 @@ func (u *Unifi) Login(ctx context.Context) error {
 // Logout logouts Unifi Controller.
 //
 // Params:
-//     ctx: parent context. You may use context.Background() to create an empty context.
+//     ctx: Parent context. You may use context.Background() to create an empty context.
 //          See http://godoc.org/context for more info.
 func (u *Unifi) Logout(ctx context.Context) error {
 	var err error
@@ -272,7 +272,7 @@ func (u *Unifi) Logout(ctx context.Context) error {
 // AuthorizeGuestWithQos() authorizes guest by MAC, time and set qos.
 //
 // Params:
-//     ctx: parent context. You may use context.Background() to create an empty context.
+//     ctx: Parent context. You may use context.Background() to create an empty context.
 //          See http://godoc.org/context for more info.
 //     site: Site name. It's **NOT** the "Site Name"(just description) in Unifi GUI.
 //           If you only have 1 site. Just use "default" or leave it empty.
@@ -375,7 +375,7 @@ func (u *Unifi) AuthorizeGuestWithQos(ctx context.Context, site, mac string, min
 // AuthorizeGuest() authorizes guest by MAC, time.It's a wrapper of AuthorizeGuestWithQos.
 //
 // Params:
-//     ctx: parent context. You may use context.Background() to create an empty context.
+//     ctx: Parent context. You may use context.Background() to create an empty context.
 //          See http://godoc.org/context for more info.
 //     site: Site name. It's **NOT** the "Site Name"(just description) in Unifi GUI.
 //           If you only have 1 site. Just use "default" or leave it empty.
