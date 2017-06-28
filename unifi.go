@@ -315,14 +315,14 @@ func (u *Unifi) AuthorizeGuestWithQos(ctx context.Context, site, mac string, min
 
 	buf := bytes.NewBuffer(b)
 
-	if debugMode {
-		log.Printf("AuthorizeGuestWithQos(): POST URL: %v", u.urls["stamgr"].String())
-		log.Printf("AuthorizeGuestWithQos(): POST data: %v", string(b))
-	}
-
 	urlStr := u.urls["stamgr"].String()
 	// Replace $site with real site.
 	urlStr = strings.Replace(urlStr, "$site", site, -1)
+
+	if debugMode {
+		log.Printf("AuthorizeGuestWithQos(): POST URL: %v", urlStr)
+		log.Printf("AuthorizeGuestWithQos(): POST data: %v", string(b))
+	}
 
 	// Authorize Guest.
 	req, err := http.NewRequest("POST", urlStr, buf)
