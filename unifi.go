@@ -22,9 +22,10 @@ const (
 var (
 	debugMode = false
 	rawURLs   = map[string]string{
-		"login":  "/api/login",
-		"logout": "/api/logout",
-		"stamgr": "/api/s/$site/cmd/stamgr",
+		"login":    "/api/login",
+		"logout":   "/api/logout",
+		"stamgr":   "/api/s/$site/cmd/stamgr",
+		"list-sta": "/api/s/$site/stat/sta",
 	}
 )
 
@@ -138,6 +139,50 @@ func ParseJSON(b []byte) (map[string]interface{}, bool, error) {
 	return m, rc == "ok", err
 }
 
+// Do does the HTTP request for Unifi API.
+//
+// Params:
+//     r: *http.Request.
+//     readRespBody: if read response body or not.
+//                   it will return the response body if it's true or return nil if it's false.
+// Return:
+//     response body if readRespBody is true.
+func (u *Unifi) Do(r *http.Request, readRespBody bool) ([]byte, error) {
+	var err error
+	var b []byte
+
+	tr := &http.Transport{
+		// Skip cert verify.
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	}
+	client := &http.Client{Transport: tr, Jar: u.jar}
+
+	resp, err := client.Do(r)
+	if err != nil {
+		err = fmt.Errorf("client.Do() error: %v", err)
+		return b, err
+	}
+	defer resp.Body.Close()
+
+	if readRespBody {
+		if b, err = ioutil.ReadAll(resp.Body); err != nil {
+			err = fmt.Errorf("ReadAll() error: %v", err)
+			return b, err
+		}
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		err = fmt.Errorf("response status code: %v", resp.StatusCode)
+		return b, err
+	}
+
+	respCookies := resp.Cookies()
+	// Set cookie for cookiejar manually.
+	u.jar.SetCookies(u.baseURL, respCookies)
+
+	return b, err
+}
+
 // Login logins Unifi Controller.
 //
 // Params:
@@ -166,47 +211,17 @@ func (u *Unifi) Login(ctx context.Context) error {
 	buf := bytes.NewBuffer(b)
 
 	// Login.
-	req, err := http.NewRequest("POST", u.urls["login"].String(), buf)
+	r, err := http.NewRequest("POST", u.urls["login"].String(), buf)
 	if err != nil {
 		err = fmt.Errorf("NewRequest error: %v", err)
 		return err
 	}
 	// Get a copy of req with its context changed to ctx.
-	req = req.WithContext(ctx)
+	r = r.WithContext(ctx)
+	r.Header.Set("Accept", "*/*")
+	r.Header.Set("Content-Type", "application/json")
 
-	req.Header.Set("Accept", "*/*")
-	req.Header.Set("Content-Type", "application/json")
-
-	tr := &http.Transport{
-		// Skip cert verify.
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-	}
-	client := &http.Client{Transport: tr}
-
-	resp, err := client.Do(req)
-	if err != nil {
-		err = fmt.Errorf("client.Do() error: %v", err)
-		return err
-	}
-	defer resp.Body.Close()
-
-	if debugMode {
-		b, err = ioutil.ReadAll(resp.Body)
-		if err != nil {
-			err = fmt.Errorf("ReadAll() error: %v", err)
-			return err
-		}
-		log.Printf("Login() response: %v", string(b))
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		err = fmt.Errorf("response status code: %v", resp.StatusCode)
-		return err
-	}
-
-	respCookies := resp.Cookies()
-	// Set cookie for cookiejar manually.
-	u.jar.SetCookies(u.baseURL, respCookies)
+	_, err = u.Do(r, false)
 
 	return err
 }
@@ -223,46 +238,16 @@ func (u *Unifi) Logout(ctx context.Context) error {
 
 	// Logout.
 	// Method: POST.
-	req, err := http.NewRequest("POST", u.urls["logout"].String(), nil)
+	r, err := http.NewRequest("POST", u.urls["logout"].String(), nil)
 	if err != nil {
 		err = fmt.Errorf("NewRequest error: %v", err)
 		return err
 	}
 	// Get a copy of req with its context changed to ctx.
-	req = req.WithContext(ctx)
+	r = r.WithContext(ctx)
+	r.Header.Set("Accept", "*/*")
 
-	req.Header.Set("Accept", "*/*")
-
-	tr := &http.Transport{
-		// Skip cert verify.
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-	}
-	client := &http.Client{Transport: tr, Jar: u.jar}
-
-	resp, err := client.Do(req)
-	if err != nil {
-		err = fmt.Errorf("client.Do() error: %v", err)
-		return err
-	}
-	defer resp.Body.Close()
-
-	if debugMode {
-		b, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			err = fmt.Errorf("ReadAll() error: %v", err)
-			return err
-		}
-		log.Printf("Logout() response: %v", string(b))
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		err = fmt.Errorf("response status code: %v", resp.StatusCode)
-		return err
-	}
-
-	respCookies := resp.Cookies()
-	// Set cookie for cookiejar manually.
-	u.jar.SetCookies(u.baseURL, respCookies)
+	_, err = u.Do(r, false)
 
 	return err
 }
@@ -325,47 +310,17 @@ func (u *Unifi) AuthorizeGuestWithQos(ctx context.Context, site, mac string, min
 	}
 
 	// Authorize Guest.
-	req, err := http.NewRequest("POST", urlStr, buf)
+	r, err := http.NewRequest("POST", urlStr, buf)
 	if err != nil {
 		err = fmt.Errorf("NewRequest error: %v", err)
 		return err
 	}
 	// Get a copy of req with its context changed to ctx.
-	req = req.WithContext(ctx)
+	r = r.WithContext(ctx)
+	r.Header.Set("Accept", "*/*")
+	r.Header.Set("Content-Type", "application/json")
 
-	req.Header.Set("Accept", "*/*")
-	req.Header.Set("Content-Type", "application/json")
-
-	tr := &http.Transport{
-		// Skip cert verify.
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-	}
-	client := &http.Client{Transport: tr, Jar: u.jar}
-
-	resp, err := client.Do(req)
-	if err != nil {
-		err = fmt.Errorf("client.Do() error: %v", err)
-		return err
-	}
-	defer resp.Body.Close()
-
-	if debugMode {
-		b, err = ioutil.ReadAll(resp.Body)
-		if err != nil {
-			err = fmt.Errorf("ReadAll() error: %v", err)
-			return err
-		}
-		log.Printf("AuthorizeGuest() response: %v", string(b))
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		err = fmt.Errorf("response status code: %v", resp.StatusCode)
-		return err
-	}
-
-	respCookies := resp.Cookies()
-	// Set cookie for cookiejar manually.
-	u.jar.SetCookies(u.baseURL, respCookies)
+	_, err = u.Do(r, false)
 
 	return err
 }
@@ -427,47 +382,61 @@ func (u *Unifi) UnAuthorizeGuest(ctx context.Context, site, mac string) error {
 	}
 
 	// Authorize Guest.
-	req, err := http.NewRequest("POST", urlStr, buf)
+	r, err := http.NewRequest("POST", urlStr, buf)
 	if err != nil {
 		err = fmt.Errorf("NewRequest error: %v", err)
 		return err
 	}
 	// Get a copy of req with its context changed to ctx.
-	req = req.WithContext(ctx)
+	r = r.WithContext(ctx)
+	r.Header.Set("Content-Type", "application/json")
 
-	req.Header.Set("Accept", "*/*")
-	req.Header.Set("Content-Type", "application/json")
-
-	tr := &http.Transport{
-		// Skip cert verify.
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-	}
-	client := &http.Client{Transport: tr, Jar: u.jar}
-
-	resp, err := client.Do(req)
-	if err != nil {
-		err = fmt.Errorf("client.Do() error: %v", err)
-		return err
-	}
-	defer resp.Body.Close()
-
-	if debugMode {
-		b, err = ioutil.ReadAll(resp.Body)
-		if err != nil {
-			err = fmt.Errorf("ReadAll() error: %v", err)
-			return err
-		}
-		log.Printf("UnAuthorizeGuest() response: %v", string(b))
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		err = fmt.Errorf("response status code: %v", resp.StatusCode)
-		return err
-	}
-
-	respCookies := resp.Cookies()
-	// Set cookie for cookiejar manually.
-	u.jar.SetCookies(u.baseURL, respCookies)
+	_, err = u.Do(r, false)
 
 	return err
+}
+
+func (u *Unifi) ListSta(ctx context.Context, site string) (string, error) {
+	var err error
+
+	defer logFnResult("ListSta", err)
+
+	if site == "" {
+		site = "default"
+	}
+
+	args := map[string]string{}
+
+	b, err := json.Marshal(args)
+	if err != nil {
+		err = fmt.Errorf("json.Marshal() error: %v", err)
+		return "", err
+	}
+
+	buf := bytes.NewBuffer(b)
+
+	urlStr := u.urls["list-sta"].String()
+	// Replace $site with real site.
+	urlStr = strings.Replace(urlStr, "$site", site, -1)
+
+	if debugMode {
+		log.Printf("ListSta(): POST URL: %v", urlStr)
+		log.Printf("ListSta(): POST data: %v", string(b))
+	}
+
+	// Authorize Guest.
+	r, err := http.NewRequest("POST", urlStr, buf)
+	if err != nil {
+		err = fmt.Errorf("NewRequest error: %v", err)
+		return "", err
+	}
+	// Get a copy of req with its context changed to ctx.
+	r = r.WithContext(ctx)
+	r.Header.Set("Content-Type", "application/json")
+
+	if b, err = u.Do(r, true); err != nil {
+		return "", err
+	}
+
+	return string(b), err
 }

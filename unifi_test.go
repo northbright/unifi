@@ -72,6 +72,14 @@ func Example() {
 			return
 		}*/
 
+		// List sta
+		s, err := u.ListSta(ctx, "default")
+		if err != nil {
+			exit <- err
+			return
+		}
+		log.Printf("STA: %v", s)
+
 		exit <- nil
 	}()
 
