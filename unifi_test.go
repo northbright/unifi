@@ -66,6 +66,11 @@ func Example() {
 			return
 		}
 
+		// Unauthorize guest with MAC.
+		/*if err = u.UnAuthorizeGuest(ctx, "default", mac); err != nil {
+			exit <- err
+		}*/
+
 		exit <- nil
 	}()
 

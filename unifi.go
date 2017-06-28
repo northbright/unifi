@@ -385,3 +385,89 @@ func (u *Unifi) AuthorizeGuestWithQos(ctx context.Context, site, mac string, min
 func (u *Unifi) AuthorizeGuest(ctx context.Context, site, mac string, min int) error {
 	return u.AuthorizeGuestWithQos(ctx, site, mac, min, 0, 0, 0)
 }
+
+// UnAuthorizeGuest unauthorizes guest by MAC.
+//
+// Params:
+//     ctx: Parent context. You may use context.Background() to create an empty context.
+//          See http://godoc.org/context for more info.
+//     site: Site name. It's **NOT** the "Site Name"(just description) in Unifi GUI.
+//           If you only have 1 site. Just use "default" or leave it empty.
+//           If you've created new sites, follow this to get the site name:
+//           https://github.com/northbright/Notes/blob/master/Software/unifi/use-compass-to-explore-mongodb-of-unifi/use-compass-to-explore-mongodb-of-unifi.md
+//     mac: MAC address of guest to be authorized. It's in "aa:bb:cc:dd:ee:ff" format.
+func (u *Unifi) UnAuthorizeGuest(ctx context.Context, site, mac string) error {
+	var err error
+
+	defer logFnResult("UnAuthorizeGuest", err)
+
+	if site == "" {
+		site = "default"
+	}
+
+	args := map[string]string{}
+	args["cmd"] = "unauthorize-guest"
+	args["mac"] = mac
+
+	b, err := json.Marshal(args)
+	if err != nil {
+		err = fmt.Errorf("json.Marshal() error: %v", err)
+		return err
+	}
+
+	buf := bytes.NewBuffer(b)
+
+	urlStr := u.urls["stamgr"].String()
+	// Replace $site with real site.
+	urlStr = strings.Replace(urlStr, "$site", site, -1)
+
+	if debugMode {
+		log.Printf("UnAuthorizeGuest(): POST URL: %v", urlStr)
+		log.Printf("UnAuthorizeGuest(): POST data: %v", string(b))
+	}
+
+	// Authorize Guest.
+	req, err := http.NewRequest("POST", urlStr, buf)
+	if err != nil {
+		err = fmt.Errorf("NewRequest error: %v", err)
+		return err
+	}
+	// Get a copy of req with its context changed to ctx.
+	req = req.WithContext(ctx)
+
+	req.Header.Set("Accept", "*/*")
+	req.Header.Set("Content-Type", "application/json")
+
+	tr := &http.Transport{
+		// Skip cert verify.
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	}
+	client := &http.Client{Transport: tr, Jar: u.jar}
+
+	resp, err := client.Do(req)
+	if err != nil {
+		err = fmt.Errorf("client.Do() error: %v", err)
+		return err
+	}
+	defer resp.Body.Close()
+
+	if debugMode {
+		b, err = ioutil.ReadAll(resp.Body)
+		if err != nil {
+			err = fmt.Errorf("ReadAll() error: %v", err)
+			return err
+		}
+		log.Printf("UnAuthorizeGuest() response: %v", string(b))
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		err = fmt.Errorf("response status code: %v", resp.StatusCode)
+		return err
+	}
+
+	respCookies := resp.Cookies()
+	// Set cookie for cookiejar manually.
+	u.jar.SetCookies(u.baseURL, respCookies)
+
+	return err
+}
