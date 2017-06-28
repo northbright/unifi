@@ -396,6 +396,17 @@ func (u *Unifi) UnAuthorizeGuest(ctx context.Context, site, mac string) error {
 	return err
 }
 
+// ListSTA lists STAs(a station is a WiFi Device) belong to given site.
+//
+// Params:
+//     ctx: Parent context. You may use context.Background() to create an empty context.
+//          See http://godoc.org/context for more info.
+//     site: Site name. It's **NOT** the "Site Name"(just description) in Unifi GUI.
+//           If you only have 1 site. Just use "default" or leave it empty.
+//           If you've created new sites, follow this to get the site name:
+//           https://github.com/northbright/Notes/blob/master/Software/unifi/use-compass-to-explore-mongodb-of-unifi/use-compass-to-explore-mongodb-of-unifi.md
+// Return:
+//     JSON string as result.
 func (u *Unifi) ListSTA(ctx context.Context, site string) (string, error) {
 	var err error
 
