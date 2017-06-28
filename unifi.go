@@ -138,7 +138,7 @@ func ParseJSON(b []byte) (map[string]interface{}, bool, error) {
 	return m, rc == "ok", err
 }
 
-// Login() logins Unifi Controller.
+// Login logins Unifi Controller.
 //
 // Params:
 //     ctx: Parent context. You may use context.Background() to create an empty context.
@@ -267,7 +267,7 @@ func (u *Unifi) Logout(ctx context.Context) error {
 	return err
 }
 
-// AuthorizeGuestWithQos() authorizes guest by MAC, time and set qos.
+// AuthorizeGuestWithQos authorizes guest by MAC, time and set qos.
 //
 // Params:
 //     ctx: Parent context. You may use context.Background() to create an empty context.
@@ -370,7 +370,7 @@ func (u *Unifi) AuthorizeGuestWithQos(ctx context.Context, site, mac string, min
 	return err
 }
 
-// AuthorizeGuest() authorizes guest by MAC, time.It's a wrapper of AuthorizeGuestWithQos.
+// AuthorizeGuest authorizes guest by MAC, time.It's a wrapper of AuthorizeGuestWithQos.
 //
 // Params:
 //     ctx: Parent context. You may use context.Background() to create an empty context.
