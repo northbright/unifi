@@ -396,10 +396,10 @@ func (u *Unifi) UnAuthorizeGuest(ctx context.Context, site, mac string) error {
 	return err
 }
 
-func (u *Unifi) ListSta(ctx context.Context, site string) (string, error) {
+func (u *Unifi) ListSTA(ctx context.Context, site string) (string, error) {
 	var err error
 
-	defer logFnResult("ListSta", err)
+	defer logFnResult("ListSTA", err)
 
 	if site == "" {
 		site = "default"
@@ -420,8 +420,8 @@ func (u *Unifi) ListSta(ctx context.Context, site string) (string, error) {
 	urlStr = strings.Replace(urlStr, "$site", site, -1)
 
 	if debugMode {
-		log.Printf("ListSta(): POST URL: %v", urlStr)
-		log.Printf("ListSta(): POST data: %v", string(b))
+		log.Printf("ListSTA(): POST URL: %v", urlStr)
+		log.Printf("ListSTA(): POST data: %v", string(b))
 	}
 
 	// Authorize Guest.

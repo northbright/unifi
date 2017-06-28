@@ -72,8 +72,8 @@ func Example() {
 			return
 		}*/
 
-		// List sta
-		s, err := u.ListSta(ctx, "default")
+		// List STA(station is a WiFi device).
+		s, err := u.ListSTA(ctx, "default")
 		if err != nil {
 			exit <- err
 			return
