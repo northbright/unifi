@@ -1,4 +1,4 @@
-# Unifi
+# unifi
 
 [![Build Status](https://travis-ci.org/northbright/unifi.svg?branch=master)](https://travis-ci.org/northbright/unifi)
 [![Go Report Card](https://goreportcard.com/badge/github.com/northbright/unifi)](https://goreportcard.com/report/github.com/northbright/unifi)
