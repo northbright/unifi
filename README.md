@@ -1,6 +1,7 @@
 # Unifi
 
 [![Build Status](https://travis-ci.org/northbright/unifi.svg?branch=master)](https://travis-ci.org/northbright/unifi)
+[![Go Report Card](https://goreportcard.com/badge/github.com/northbright/unifi)](https://goreportcard.com/report/github.com/northbright/unifi)
 
 package unifi is a [Golang](https://golang.org) SDK for [UBNT](https://www.ubnt.com/) [Unifi](https://unifi-sdn.ubnt.com/) APIs to interact with Unifi Controller.
 
