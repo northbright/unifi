@@ -22,10 +22,9 @@ const (
 var (
 	debugMode = false
 	rawURLs   = map[string]string{
-		"login":    "/api/login",
-		"logout":   "/api/logout",
-		"stamgr":   "/api/s/$site/cmd/stamgr",
-		"list-sta": "/api/s/$site/stat/sta",
+		"login":  "/api/login",
+		"logout": "/api/logout",
+		"stamgr": "/api/s/$site/cmd/stamgr",
 	}
 )
 
@@ -394,60 +393,4 @@ func (u *Unifi) UnAuthorizeGuest(ctx context.Context, site, mac string) error {
 	_, err = u.Do(r, false)
 
 	return err
-}
-
-// ListSTA lists STAs(a station is a WiFi Device) belong to given site.
-//
-// Params:
-//     ctx: Parent context. You may use context.Background() to create an empty context.
-//          See http://godoc.org/context for more info.
-//     site: Site name. It's **NOT** the "Site Name"(just description) in Unifi GUI.
-//           If you only have 1 site. Just use "default" or leave it empty.
-//           If you've created new sites, follow this to get the site name:
-//           https://github.com/northbright/Notes/blob/master/Software/unifi/use-compass-to-explore-mongodb-of-unifi/use-compass-to-explore-mongodb-of-unifi.md
-// Return:
-//     JSON string as result.
-func (u *Unifi) ListSTA(ctx context.Context, site string) (string, error) {
-	var err error
-
-	defer logFnResult("ListSTA", err)
-
-	if site == "" {
-		site = "default"
-	}
-
-	args := map[string]string{}
-
-	b, err := json.Marshal(args)
-	if err != nil {
-		err = fmt.Errorf("json.Marshal() error: %v", err)
-		return "", err
-	}
-
-	buf := bytes.NewBuffer(b)
-
-	urlStr := u.urls["list-sta"].String()
-	// Replace $site with real site.
-	urlStr = strings.Replace(urlStr, "$site", site, -1)
-
-	if debugMode {
-		log.Printf("ListSTA(): POST URL: %v", urlStr)
-		log.Printf("ListSTA(): POST data: %v", string(b))
-	}
-
-	// Authorize Guest.
-	r, err := http.NewRequest("POST", urlStr, buf)
-	if err != nil {
-		err = fmt.Errorf("NewRequest error: %v", err)
-		return "", err
-	}
-	// Get a copy of req with its context changed to ctx.
-	r = r.WithContext(ctx)
-	r.Header.Set("Content-Type", "application/json")
-
-	if b, err = u.Do(r, true); err != nil {
-		return "", err
-	}
-
-	return string(b), err
 }
