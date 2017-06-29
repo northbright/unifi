@@ -4,7 +4,7 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/northbright/unifi)](https://goreportcard.com/report/github.com/northbright/unifi)
 [![GoDoc](https://godoc.org/github.com/northbright/unifi?status.svg)](https://godoc.org/github.com/northbright/unifi)
 
-package unifi is a [Golang](https://golang.org) SDK for [UBNT](https://www.ubnt.com/) [Unifi](https://unifi-sdn.ubnt.com/) APIs to interact with Unifi Controller.
+Package unifi is a [Golang](https://golang.org) SDK for [UBNT](https://www.ubnt.com/) [Unifi](https://unifi-sdn.ubnt.com/) APIs to interact with Unifi Controller.
 
 Currently, it focuses on guest authorization which is useful to implment customized portal server.
 
