@@ -21,11 +21,13 @@ func Example() {
 		}
 	}()
 
+	// New an Unifi instance.
 	u, err := unifi.New(unifiURL, userName, password)
 	if err != nil {
 		return
 	}
 
+	// Set debug mode to true to output debug messages(default is false).
 	unifi.SetDebugMode(true)
 
 	// Set timeout to 5 seconds.
