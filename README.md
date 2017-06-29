@@ -1,6 +1,7 @@
 # Unifi
 
 package unifi is a [Golang](https://golang.org) SDK for [UBNT](https://www.ubnt.com/) [Unifi](https://unifi-sdn.ubnt.com/) APIs to interact with Unifi Controller.
+
 Currently, it focuses on guest authorization which is useful to implment customized portal server.
 
 #### Features
