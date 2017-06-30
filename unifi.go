@@ -349,7 +349,7 @@ func (u *Unifi) AuthorizeGuest(ctx context.Context, site, mac string, min int) e
 //           If you only have 1 site. Just use "default" or leave it empty.
 //           If you've created new sites, follow this to get the site name:
 //           https://github.com/northbright/Notes/blob/master/Software/unifi/use-compass-to-explore-mongodb-of-unifi/use-compass-to-explore-mongodb-of-unifi.md
-//     mac: MAC address of guest to be authorized. It's in "aa:bb:cc:dd:ee:ff" format.
+//     mac: MAC address of guest to be unauthorized. It's in "aa:bb:cc:dd:ee:ff" format.
 func (u *Unifi) UnAuthorizeGuest(ctx context.Context, site, mac string) error {
 	var err error
 
